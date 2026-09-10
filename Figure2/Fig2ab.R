@@ -17,8 +17,6 @@ library(lme4); library(lmerTest); library(pbkrtest)
 #############################Richness################################
 
 
-
-
 data = read.csv('data/Weighted_ALL_ITS.csv')
 
 data <- data[!is.na(data$wt1), ]
@@ -67,16 +65,14 @@ datak <- data_1 %>%
 
 
 
-datac$source <- "ITS" #
+datac$source <- "ITS" 
 
 
-datak$source <- "Metagenomic species" #
-
-
+datak$source <- "Metagenomic species" 
 
 
 data_16S <-  datac
-data_16S$source <- "ITS" #
+data_16S$source <- "ITS" 
 
 data_16S <- data_16S %>%
   mutate(
@@ -88,68 +84,10 @@ data_16S <- data_16S %>%
   )
 
 
-
 filtered_data <- data_16S[data_16S$index == "Richness", ]
-
 
 names(filtered_data)[names(filtered_data) == "alpha"] <- "Shannon"
 
-
-
-# calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref = "NP") {
-#   df <- df %>%
-#     mutate(
-#       period = as.numeric(str_remove(period, "T")),
-#       !!group_var := factor(.data[[group_var]], levels = c("NP", "PE", "GH"))
-#     )
-#   
-#   # 每组单独模型：metric ~ (1|id) + period
-#   for (g in levels(df[[group_var]])) {
-#     fit_g <- lmer(as.formula(paste0(metric, " ~ (1|id) + period")),
-#                   data = df[df[[group_var]] == g, ], REML = FALSE)
-#     cat("\nGroup:", g, "\n")
-#     print(round(summary(fit_g)$coefficients["period", ], 4))
-#   }
-#   
-#   # 整体交互模型：metric ~ (1|id) + group * period
-#   df[[group_var]] <- relevel(df[[group_var]], ref = ref)
-#   fit_all <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
-#                   data = df, REML = FALSE)
-#   coefs <- summary(fit_all)$coefficients
-#   
-#   cat("\nOverall model (reference =", ref, "):\n")
-#   # 参考组的 period 效应
-#   if ("period" %in% rownames(coefs)) {
-#     cat("Reference period effect:\n")
-#     print(round(coefs["period", ], 4))
-#   }
-#   # 交互项（各组与参考组的斜率差）
-#   for (g in setdiff(levels(df[[group_var]]), ref)) {
-#     term <- paste0(group_var, g, ":period")
-#     if (term %in% rownames(coefs)) {
-#       cat("Interaction (", g, " vs ", ref, "):\n", sep = "")
-#       print(round(coefs[term, ], 4))
-#     }
-#   }
-#   
-#   # 新增：计算并输出 “Interaction (PE vs GH)”
-#   # 通过把参考组改为 GH，读取 groupPE:period 即得到 PE - GH 的斜率差
-#   df_gh <- df
-#   df_gh[[group_var]] <- relevel(df_gh[[group_var]], ref = "GH")
-#   fit_pe_vs_gh <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
-#                        data = df_gh, REML = FALSE)
-#   coefs_gh <- summary(fit_pe_vs_gh)$coefficients
-#   term_pe_vs_gh <- paste0(group_var, "PE:period")
-#   if (term_pe_vs_gh %in% rownames(coefs_gh)) {
-#     cat("\nInteraction (PE vs GH):\n")
-#     print(round(coefs_gh[term_pe_vs_gh, ], 4))
-#   }
-#   
-#   invisible(list(
-#     fit_all_ref = fit_all,
-#     fit_pe_vs_gh = fit_pe_vs_gh
-#   ))
-# }
 
 library(dplyr)
 library(stringr)
@@ -162,16 +100,16 @@ calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref 
       !!group_var := factor(.data[[group_var]], levels = c("NP", "PE", "GH"))
     )
   
-  # 创建一个空的数据框，用于收集后续所有的统计结果
+  # Create an empty list to collect all subsequent statistical results
   res_list <- list()
   
-  # 1. 每组单独模型：metric ~ (1|id) + period
+  # 1. Separate model for each group: metric ~ (1|id) + period
   for (g in levels(df[[group_var]])) {
     fit_g <- lmer(as.formula(paste0(metric, " ~ (1|id) + period")),
                   data = df[df[[group_var]] == g, ], REML = FALSE)
     
     coefs <- summary(fit_g)$coefficients
-    # lmerTest 提供的系数表最后一列通常是 p 值 (Pr(>|t|))
+    # The last column of the coefficient table provided by lmerTest is usually the p-value (Pr(>|t|))
     p_val <- coefs["period", ncol(coefs)] 
     
     res_list[[paste0(g, "_trend")]] <- data.frame(
@@ -181,13 +119,13 @@ calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref 
     )
   }
   
-  # 2. 整体交互模型：metric ~ (1|id) + group * period
+  # 2. Overall interaction model: metric ~ (1|id) + group * period
   df[[group_var]] <- relevel(df[[group_var]], ref = ref)
   fit_all <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
                   data = df, REML = FALSE)
   coefs_all <- summary(fit_all)$coefficients
   
-  # 提取交互项（各组与参考组的斜率差）
+  # Extract interaction terms (slope difference between each group and the reference group)
   for (g in setdiff(levels(df[[group_var]]), ref)) {
     term <- paste0(group_var, g, ":period")
     if (term %in% rownames(coefs_all)) {
@@ -199,7 +137,7 @@ calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref 
     }
   }
   
-  # 3. 计算并提取 “Interaction (PE vs GH)”
+  # 3. Calculate and extract "Interaction (PE vs GH)"
   df_gh <- df
   df_gh[[group_var]] <- relevel(df_gh[[group_var]], ref = "GH")
   fit_pe_vs_gh <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
@@ -215,17 +153,17 @@ calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref 
     )
   }
   
-  # 4. 合并所有结果并进行 FDR 矫正 -------------------
+  # 4. Combine all results and perform FDR correction -------------------
   final_results <- bind_rows(res_list)
-  # 使用自带的 p.adjust 函数进行 FDR 矫正 (Benjamini-Hochberg 方法)
+  # Use the built-in p.adjust function for FDR correction (Benjamini-Hochberg method)
   final_results$FDR <- p.adjust(final_results$P_value, method = "fdr")
   
-  # 打印漂亮的汇总表格
+  # Print a neatly formatted summary table
   cat("\n=== Trend & Interaction Statistics ===\n")
-  print(final_results %>% mutate_if(is.numeric, round, 4)) # 保留4位小数输出
+  print(final_results %>% mutate_if(is.numeric, round, 4)) # Output with 4 decimal places
   cat("======================================\n")
   
-  # 返回模型和统计表
+  # Return the models and statistical table
   invisible(list(
     stats_table = final_results,
     fit_all_ref = fit_all,
@@ -255,39 +193,10 @@ my_comparisons <- list(
 
 
 
-# p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, color = group)) +
-#   facet_wrap(~ period, nrow = 1) +
-#   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
-#   geom_boxplot(size = 0.8, width = 0.3, alpha = 0.1, outlier.shape = NA,
-#                position = position_dodge(0.4)) +
-#   stat_summary(fun = median, geom = "line", aes(group = group),
-#                position = position_dodge(0.4)) +
-#   scale_fill_manual(values = col_group) +
-#   scale_color_manual(values = col_group) +
-#   scale_y_continuous(expand = c(0, 0.1), limits = c(NA, 105)) +
-#   theme_bw() +
-#   theme(
-#     axis.title = element_blank(),
-#     axis.text.x = element_text(size = 11.2, color = "black"),
-#     axis.text.y = element_text(size = 13.2, color = "grey10"),
-#     strip.text = element_text(size = 11, color = 'black'),
-#     strip.background = element_rect(fill = '#c0a8b6'),
-#     legend.title = element_blank(),
-#     panel.grid = element_line(linetype = 2),
-#     legend.position = "none"
-#   ) +
-#   stat_compare_means(
-#     comparisons = my_comparisons,
-#     method = "wilcox.test",      # 或 "t.test"，看你数据分布
-#     label = "p.signif",          # 或 "p.format"
-#     hide.ns = FALSE              # TRUE 可隐藏不显著结果
-#   )
-
-
 library(rstatix)
 library(ggpubr)
 
-# 第一步：在画图前，先单独计算并进行 FDR 矫正
+# Step 1: Calculate and perform FDR correction separately before plotting
 
 stat.test <- filtered_data %>%   
   group_by(period) %>%   
@@ -305,7 +214,7 @@ stat.test <- stat.test %>%
     formula = Shannon ~ group
   )
 
-# 第二步：原来的画图代码，只替换最后一句
+# Step 2: The original plotting code, only replacing the last line
 p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, color = group)) +
   facet_wrap(~ period, nrow = 1) +
   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
@@ -332,14 +241,14 @@ p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, col
     label = "p.adj",  ###label = "p.adj.signif"
     tip.length = 0.01,
     hide.ns = FALSE,
-    inherit.aes = FALSE      # <--- 加上这一行，断开全局继承，直接解决报错！
+    inherit.aes = FALSE      # <--- Add this line to break global inheritance and fix the error directly!
   )
 
 print(stat.test)
 
 
 
-p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, color = group)) +
+p_fig <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, color = group)) +
   facet_wrap(~ "Fungal Richness") +
   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
   geom_boxplot(size = 0.8, width = 0.3, alpha = 0.1, outlier.shape = NA,
@@ -362,19 +271,19 @@ p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, co
   annotate('text', x = 1.6, y = 63, size = 4., hjust = 0,
            label=expression(paste(italic('P'),'-trend < 0.001 for NP')))+
   geom_signif(
-    # 每个period的三个比较，按照新顺序
+    # The three comparisons for each period, in the new order
     xmin = c(1.0, 0.85, 0.85,     # period 1: GH vs Non-HDP, PE vs GH, PE vs Non-HDP
-             2.0, 1.85, 1.85,      # period 2: 同样顺序
-             3.0, 2.85, 2.85),     # period 3: 同样顺序
+             2.0, 1.85, 1.85,     # period 2: Same order
+             3.0, 2.85, 2.85),    # period 3: Same order
     xmax = c(1.15, 1.0, 1.15,      
              2.15, 2.0, 2.15,      
              3.15, 3.0, 3.15),  
-    y_position = c(62, 66, 70,  # period 1的不同高度
-                   47, 51, 55,  # period 2的不同高度
-                   47, 51, 55), # period 3的不同高度
-    annotations = c("NS", "***", "NS",    # period 1的三个比较
-                    "NS", "NS", "NS",    # period 2的三个比较
-                    "NS", "NS", "NS"), # 根据您的实际显著性结果调整
+    y_position = c(62, 66, 70,  # Different heights for period 1
+                   47, 51, 55,  # Different heights for period 2
+                   47, 51, 55), # Different heights for period 3
+    annotations = c("NS", "***", "NS",    # Three comparisons for period 1
+                    "NS", "NS", "NS",     # Three comparisons for period 2
+                    "NS", "NS", "NS"),    # Adjust according to your actual significance results
     tip_length = 0.01, 
     size = 0.4, 
     textsize = 3.7, 
@@ -394,7 +303,7 @@ p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, co
 
 
 
-ggsave('Anti_graph/fig2a_Richness_ITS_class3.pdf', p_shannon, width = 4.6, height = 4.3)
+ggsave('Anti_graph/fig2a_Richness_ITS_class3.pdf', p_fig, width = 4.6, height = 4.3)
 
 
 
@@ -406,9 +315,8 @@ ggsave('Anti_graph/fig2a_Richness_ITS_class3.pdf', p_shannon, width = 4.6, heigh
 
 data_16S <-  datak
 range(datak$alpha, na.rm = TRUE)
-data_16S$source <- "16S"
+data_16S$source <- "MGS"
 
-# data_16S$group <- ifelse(data_16S$HDP == 1, "HDP", "Non-HDP")
 
 
 data_16S <- data_16S %>%
@@ -427,68 +335,9 @@ names(filtered_data)[names(filtered_data) == "alpha"] <- "Shannon"
 
 
 
-# calculate_trend_pv <- function(df, group_var = "group", metric = "Shannon", ref = "NP") {
-#   df <- df %>%
-#     mutate(
-#       period = as.numeric(str_remove(period, "T")),
-#       !!group_var := factor(.data[[group_var]], levels = c("NP", "PE", "GH"))
-#     )
-#   
-#   # 每组单独模型：metric ~ (1|id) + period
-#   for (g in levels(df[[group_var]])) {
-#     fit_g <- lmer(as.formula(paste0(metric, " ~ (1|id) + period")),
-#                   data = df[df[[group_var]] == g, ], REML = FALSE)
-#     cat("\nGroup:", g, "\n")
-#     print(round(summary(fit_g)$coefficients["period", ], 4))
-#   }
-#   
-#   # 整体交互模型：metric ~ (1|id) + group * period
-#   df[[group_var]] <- relevel(df[[group_var]], ref = ref)
-#   fit_all <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
-#                   data = df, REML = FALSE)
-#   coefs <- summary(fit_all)$coefficients
-#   
-#   cat("\nOverall model (reference =", ref, "):\n")
-#   # 参考组的 period 效应
-#   if ("period" %in% rownames(coefs)) {
-#     cat("Reference period effect:\n")
-#     print(round(coefs["period", ], 4))
-#   }
-#   # 交互项（各组与参考组的斜率差）
-#   for (g in setdiff(levels(df[[group_var]]), ref)) {
-#     term <- paste0(group_var, g, ":period")
-#     if (term %in% rownames(coefs)) {
-#       cat("Interaction (", g, " vs ", ref, "):\n", sep = "")
-#       print(round(coefs[term, ], 4))
-#     }
-#   }
-#   
-#   # 新增：计算并输出 “Interaction (PE vs GH)”
-#   # 通过把参考组改为 GH，读取 groupPE:period 即得到 PE - GH 的斜率差
-#   df_gh <- df
-#   df_gh[[group_var]] <- relevel(df_gh[[group_var]], ref = "GH")
-#   fit_pe_vs_gh <- lmer(as.formula(paste0(metric, " ~ (1|id) + ", group_var, " * period")),
-#                        data = df_gh, REML = FALSE)
-#   coefs_gh <- summary(fit_pe_vs_gh)$coefficients
-#   term_pe_vs_gh <- paste0(group_var, "PE:period")
-#   if (term_pe_vs_gh %in% rownames(coefs_gh)) {
-#     cat("\nInteraction (PE vs GH):\n")
-#     print(round(coefs_gh[term_pe_vs_gh, ], 4))
-#   }
-#   
-#   invisible(list(
-#     fit_all_ref = fit_all,
-#     fit_pe_vs_gh = fit_pe_vs_gh
-#   ))
-# }
-
-
 
 calculate_trend_pv(filtered_data, group_var = "group", metric = "Shannon", ref = "NP")
 
-# calculate_trend_pv(filtered_data, 'HDP', 'Shannon')
-
-# col_group = c('HDP'='#cc8082','Non-HDP'='#5c6d8e')
 
 col_group = c('PE'='#cc8082', "GH" = "#f9ddba", 'NP'='#5c6d8e')
 
@@ -505,40 +354,10 @@ my_comparisons <- list(
 )
 
 
-
-# p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, color = group)) +
-#   facet_wrap(~ period, nrow = 1) +
-#   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
-#   geom_boxplot(size = 0.8, width = 0.3, alpha = 0.1, outlier.shape = NA,
-#                position = position_dodge(0.4)) +
-#   stat_summary(fun = median, geom = "line", aes(group = group),
-#                position = position_dodge(0.4)) +
-#   scale_fill_manual(values = col_group) +
-#   scale_color_manual(values = col_group) +
-#   scale_y_continuous(expand = c(0, 0.1), limits = c(NA, 355)) +
-#   theme_bw() +
-#   theme(
-#     axis.title = element_blank(),
-#     axis.text.x = element_text(size = 11.2, color = "black"),
-#     axis.text.y = element_text(size = 13.2, color = "grey10"),
-#     strip.text = element_text(size = 11, color = 'black'),
-#     strip.background = element_rect(fill = '#c0a8b6'),
-#     legend.title = element_blank(),
-#     panel.grid = element_line(linetype = 2),
-#     legend.position = "none"
-#   ) +
-#   stat_compare_means(
-#     comparisons = my_comparisons,
-#     method = "wilcox.test",      # 或 "t.test"，看你数据分布
-#     label = "p.signif",          # 或 "p.format"
-#     hide.ns = FALSE              # TRUE 可隐藏不显著结果
-#   )
-
-
 library(rstatix)
 library(ggpubr)
 
-# 第一步：在画图前，先单独计算并进行 FDR 矫正
+# Step 1: Calculate and perform FDR correction separately before plotting
 stat.test <- filtered_data %>%   
   group_by(period) %>%   
   wilcox_test(Shannon ~ group, comparisons = my_comparisons) %>%   
@@ -555,7 +374,7 @@ stat.test <- stat.test %>%
     formula = Shannon ~ group
   )
 
-# 第二步：原来的画图代码，只替换最后一句
+# Step 2: The original plotting code, only replacing the last line
 p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, color = group)) +
   facet_wrap(~ period, nrow = 1) +
   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
@@ -582,13 +401,13 @@ p_shannon <- ggplot(filtered_data, aes(x = group, y = Shannon, fill = group, col
     label = "p.adj",  ###label = "p.adj.signif"
     tip.length = 0.01,
     hide.ns = FALSE,
-    inherit.aes = FALSE      # <--- 加上这一行，断开全局继承，直接解决报错！
+    inherit.aes = FALSE      # <--- Add this line to break global inheritance and fix the error directly!
   )
 
 print(stat.test)
 
 
-p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, color = group)) +
+p_fig <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, color = group)) +
   facet_wrap(~ "Bacterial Richness") +
   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4), trim = TRUE) +
   geom_boxplot(size = 0.8, width = 0.3, alpha = 0.1, outlier.shape = NA,
@@ -611,19 +430,19 @@ p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, co
   annotate('text', x = 1.5, y = 257, size = 4., hjust = 0,
            label=expression(paste(italic('P'),'-trend = 0.010 for NP')))+
   geom_signif(
-    # 每个period的三个比较，按照新顺序
+    # The three comparisons for each period, in the new order
     xmin = c(1.0, 0.85, 0.85,     # period 1: GH vs Non-HDP, PE vs GH, PE vs Non-HDP
-             2.0, 1.85, 1.85,      # period 2: 同样顺序
-             3.0, 2.85, 2.85),     # period 3: 同样顺序
+             2.0, 1.85, 1.85,     # period 2: Same order
+             3.0, 2.85, 2.85),    # period 3: Same order
     xmax = c(1.15, 1.0, 1.15,      
              2.15, 2.0, 2.15,      
              3.15, 3.0, 3.15),  
-    y_position = c(236, 248, 260,  # period 1的不同高度
-                   216, 228, 240,  # period 2的不同高度
-                   216, 228, 240), # period 3的不同高度
-    annotations = c("NS", "NS", "NS",    # period 1的三个比较
-                    "NS", "NS", "NS",    # period 2的三个比较
-                    "*", "NS", "**"), # 根据您的实际显著性结果调整PEvsGH xxx PEvsNP
+    y_position = c(236, 248, 260,  # Different heights for period 1
+                   216, 228, 240,  # Different heights for period 2
+                   216, 228, 240), # Different heights for period 3
+    annotations = c("NS", "NS", "NS",    # Three comparisons for period 1
+                    "NS", "NS", "NS",    # Three comparisons for period 2
+                    "*", "NS", "**"),    # Adjust according to your actual significance results (PEvsGH xxx PEvsNP)
     tip_length = 0.01, 
     size = 0.4, 
     textsize = 3.7
@@ -642,42 +461,9 @@ p_shannon <- ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, co
 
 
 
-# p_shannon = ggplot(filtered_data, aes(x = period, y = Shannon, fill = group, color=group))+
-#   facet_wrap(~"Shannon")+
-#   geom_violin(width = 0.3, alpha = 0.2, position = position_dodge(0.4))+
-#   geom_boxplot(size= 0.8, width = 0.3, alpha = 0.1, outlier.shape = NA, 
-#                position = position_dodge(0.4))+
-#   # geom_point(alpha=0.5, size=1,
-#   #            position = position_jitterdodge(jitter.width = 0.2, jitter.height = 0,
-#   #                                            dodge.width = 0.4))+
-#   stat_summary(fun = median, geom = "line", aes(group = group), 
-#                position = position_dodge(0.4))+
-#   scale_fill_manual(values = col_group)+
-#   scale_color_manual(values = col_group)+
-#   # scale_y_continuous(expand = c(0,0.1))+
-#   scale_y_continuous(expand = c(0,0.1), limits = c(1, NA))+
-#   annotate('text', x = 0.55, y = 1.86, size = 3.35, hjust = 0,
-#            label=expression(paste(italic('P'),'-interaction = 0.224')))+
-#   annotate('text', x = 0.55, y = 1.525, size = 3.35, hjust = 0,
-#            label=expression(paste(italic('P'),'-trend < 0.001 for HDP')))+
-#   annotate('text', x = 0.55, y = 1.20, size = 3.35, hjust = 0,
-#            label=expression(paste(italic('P'),'-trend < 0.001 for Non-HDP')))+
-#   stat_compare_means(aes(group = group), method = "wilcox.test",
-#                      label = "p.signif", show.legend = F, label.y.npc = 0.96)+
-#   theme_bw()+
-#   theme(
-#     axis.title = element_blank(),
-#     axis.text.x = element_text(size = 10.2, color = "black"), 
-#     axis.text.y = element_text(size = 9.2, color = "grey10"),
-#     strip.text = element_text(size = 11, color = 'black'),
-#     strip.background = element_rect(fill = '#c0a8b6'),
-#     legend.title = element_blank(),
-#     panel.grid= element_line(linetype = 2),
-#     legend.position = "none" 
-#   )
 
 
-ggsave('Anti_graph/fig2a_Richness_mgs_class3.pdf', p_shannon, width = 4.6, height = 4.3)
+ggsave('Anti_graph/fig2a_Richness_mgs_class3.pdf', p_fig, width = 4.6, height = 4.3)
 
 
 
@@ -785,7 +571,7 @@ p_T1 = ggplot(merged_data,
   geom_text(data = anno_data, 
             aes(x = x, y = y, label = label, color = group),
             inherit.aes = FALSE, 
-            hjust = 1,           # 👈 1 代表右对齐
+            hjust = 1,            # 👈 1 represents right alignment
             size = 4.5, 
             parse = TRUE, 
             show.legend = FALSE) +
@@ -809,8 +595,3 @@ p_T1 = ggplot(merged_data,
 
 
 ggsave('Anti_graph/fig2b_Richness_LMM.pdf', p_T1, width = 4.6, height = 4.3, bg = "transparent")
-
-
-
-
-

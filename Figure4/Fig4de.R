@@ -100,7 +100,7 @@ df_plot$sugg_cmpd_name <- factor(df_plot$sugg_cmpd_name,
 
 
 p_bar <- ggplot(df_plot, aes(x = sugg_cmpd_name, y = R2, fill = source)) +
-  geom_col(width = 0.8, color = NA) + # width 控制柱子宽度
+  geom_col(width = 0.8, color = NA) + # width controls the bar width
   scale_fill_manual(values = col_source) +
   labs(y = "Variance explained (%)", x = "") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
@@ -176,7 +176,7 @@ df_micro_pie <- df_annotation %>%
   group_by(Class.I) %>%
   summarise(count = n()) %>%
   mutate(prop = count / sum(count)) %>%
-  arrange(desc(Class.I)) # 必须排序
+  arrange(desc(Class.I)) # Must sort
 
 
 df_micro_pie$ymax <- cumsum(df_micro_pie$prop)
@@ -189,43 +189,43 @@ df_micro_pie$label <- paste0(df_micro_pie$Class.I, "\n", round(df_micro_pie$prop
 df_micro_pie$type <- ifelse(df_micro_pie$prop < 0.04, "outside", "inside")
 
 p1_fixed <- ggplot(df_micro_pie) +
-
+  
   geom_rect(aes(ymin = ymin, ymax = ymax, xmin = 2.5, xmax = 4, fill = Class.I), 
             color = "white") +
-
+  
   geom_text(
     data = subset(df_micro_pie, type == "inside"),
-    aes(x = 3.2, y = labelPosition, label = label), # x=3.5 位于环中间
+    aes(x = 3.2, y = labelPosition, label = label), # x=3.5 is in the middle of the ring
     size = 5, 
     color = "black", 
-    fontface = "plain" # 【修改点】强制常规体 (非粗体)
+    fontface = "plain" # [Modification] Force plain font (non-bold)
   ) +
   
   geom_segment(
     data = subset(df_micro_pie, type == "outside"),
-    aes(x = 4, xend = 4.2,             # 从环外沿(4)延伸到(4.2)
-        y = labelPosition, yend = labelPosition), # 角度不变，径向延伸
+    aes(x = 4, xend = 4.2,             # Extend from the outer edge of the ring (4) to (4.2)
+        y = labelPosition, yend = labelPosition), # Angle is constant, radial extension
     color = "black", 
     size = 0.5
   ) +
   
   geom_text(
     data = subset(df_micro_pie, type == "outside"),
-    aes(x = 4.5, y = labelPosition, label = label), # x=4.25 在线头外面一点
+    aes(x = 4.5, y = labelPosition, label = label), # x=4.25 is slightly outside the tip of the line
     size = 5, 
     color = "black", 
-    fontface = "plain", # 【修改点】强制常规体
-    hjust = 0 # 稍微左对齐一点，防止撞线
+    fontface = "plain", # [Modification] Force plain font
+    hjust = 0 # Align slightly to the left to avoid overlapping the line
   ) +
   
   scale_fill_manual(values = class_colors) +
   coord_polar(theta = "y") +
-
+  
   xlim(c(1, 4.8)) + 
   
   theme_void() +
   theme(
-    legend.position = "none", # 隐藏图例
+    legend.position = "none", # Hide legend
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")
   ) 
@@ -345,7 +345,7 @@ stats_df <- df_all %>%
   # filter(total_R2 > 2) %>%
   arrange(desc(total_R2)) %>%
   slice_head(n = 30)
-  
+
 
 
 df_plot <- df_all %>%
@@ -442,10 +442,10 @@ ggsave('Anti_graph/fig4d_factors_class3_withouwk_adj.pdf', final_plot_2, width =
 combined_plot <- final_plot_1 | final_plot_2 + 
   plot_annotation(tag_levels = 'A') 
 
-# 打印查看效果
+# Print to view the result
 print(combined_plot)
 
-# 保存最终的拼接大图（注意高度 height 翻倍了）
+# Save the final stitched large plot (note that the height is doubled)
 quartz(type = "pdf", file = "Anti_graph/fig4_combined_factors_micro_adj.pdf", width = 20, height = 6.7)
 print(combined_plot)
 dev.off()
@@ -457,7 +457,7 @@ df_micro_pie <- df_annotation %>%
   group_by(Class.I) %>%
   summarise(count = n()) %>%
   mutate(prop = count / sum(count)) %>%
-  arrange(desc(Class.I)) # 必须排序
+  arrange(desc(Class.I)) # Must sort
 
 
 df_micro_pie$ymax <- cumsum(df_micro_pie$prop)
@@ -476,27 +476,27 @@ p1_fixed <- ggplot(df_micro_pie) +
   
   geom_text(
     data = subset(df_micro_pie, type == "inside"),
-    aes(x = 3.2, y = labelPosition, label = label), # x=3.5 位于环中间
+    aes(x = 3.2, y = labelPosition, label = label), # x=3.5 is in the middle of the ring
     size = 5, 
     color = "black", 
-    fontface = "plain" # 【修改点】强制常规体 (非粗体)
+    fontface = "plain" # [Modification] Force plain font (non-bold)
   ) +
   
   geom_segment(
     data = subset(df_micro_pie, type == "outside"),
-    aes(x = 4, xend = 4.2,             # 从环外沿(4)延伸到(4.2)
-        y = labelPosition, yend = labelPosition), # 角度不变，径向延伸
+    aes(x = 4, xend = 4.2,             # Extend from the outer edge of the ring (4) to (4.2)
+        y = labelPosition, yend = labelPosition), # Angle is constant, radial extension
     color = "black", 
     size = 0.5
   ) +
   
   geom_text(
     data = subset(df_micro_pie, type == "outside"),
-    aes(x = 4.5, y = labelPosition, label = label), # x=4.25 在线头外面一点
+    aes(x = 4.5, y = labelPosition, label = label), # x=4.25 is slightly outside the tip of the line
     size = 5, 
     color = "black", 
-    fontface = "plain", # 【修改点】强制常规体
-    hjust = 0 # 稍微左对齐一点，防止撞线
+    fontface = "plain", # [Modification] Force plain font
+    hjust = 0 # Align slightly to the left to avoid overlapping the line
   ) +
   
   scale_fill_manual(values = class_colors) +
@@ -506,7 +506,7 @@ p1_fixed <- ggplot(df_micro_pie) +
   
   theme_void() +
   theme(
-    legend.position = "none", # 隐藏图例
+    legend.position = "none", # Hide legend
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")
   ) 
@@ -515,7 +515,3 @@ print(p1_fixed)
 
 
 ggsave('Anti_graph/fig4d_factors_circo.pdf', p1_fixed, width = 4, height = 4)
-
-
-
-
